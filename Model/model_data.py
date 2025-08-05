@@ -14,7 +14,15 @@ def load_and_preprocess(csv_path):
     except Exception as e:
         print(f"Error loading or preprocessing data: {e}")
         return None
-
+def load_event(csv_path):
+    try:
+        df = pd.read_csv(csv_path, parse_dates=['Date'])
+        df.sort_values("Date", inplace=True)
+        df.dropna(inplace=True)
+        return df
+    except Exception as e:
+        print(f"Error loading or preprocessing data: {e}")
+        return None
 def build_model(returns, target_accept=0.95, draws=2000, tune=1000):
     try:
         with pm.Model() as model:
