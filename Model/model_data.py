@@ -23,7 +23,7 @@ def load_event(csv_path):
     except Exception as e:
         print(f"Error loading or preprocessing data: {e}")
         return None
-def build_model(returns, target_accept=0.95, draws=2000, tune=1000):
+def build_model(returns, target_accept=0.95, draws=500, tune=500, cores=1):
     try:
         with pm.Model() as model:
             tau = pm.DiscreteUniform("tau", lower=0, upper=len(returns) - 1)
