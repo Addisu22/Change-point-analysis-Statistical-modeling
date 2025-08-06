@@ -14,7 +14,7 @@ const Indicators = () => {
 
   return (
     <div>
-      <h3>Oil Price Indicators</h3>
+      <h3>Oil Price Indicators: Key Indicators</h3>
       <ul>
         <li><strong>Average Price:</strong> ${indicators.average_price}</li>
         <li><strong>Volatility (Std Dev):</strong> {indicators.volatility}</li>

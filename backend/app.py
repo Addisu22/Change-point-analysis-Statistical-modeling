@@ -1,13 +1,13 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import pandas as pd
-import pymc as pm
 import numpy as np
 import matplotlib.pyplot as plt
+from data_analysis import get_log_return_data, get_summary_indicators
+from mc import *
 
 import warnings
 warnings.filterwarnings('ignore')
-
 
 
 app = Flask(__name__)
@@ -15,7 +15,7 @@ CORS(app, origins='*')
 
 # Load data
 prices_df = pd.read_csv("../Data/BrentOilPrices.csv", parse_dates=["Date"])
-events_df = pd.read_csv("../Data/key_events.csv", parse_dates=["Date"])
+events_df = pd.read_csv("../Data/key_event.csv", parse_dates=["Date"])
 
 # price route
 @app.route("/api/prices")
@@ -31,56 +31,65 @@ def get_events():
 @app.route("/api/indicators")
 def get_indicators():
     return jsonify({
-        "average_price": round(prices_df["Price"].mean(), 2),
-        "volatility": round(prices_df["Price"].std(), 2)
+        "average_price": round(prices_df["Price"].mean(), 4),
+        "volatility": round(prices_df["Price"].std(), 4)
     })
 
-prices_df['LogPrice'] = np.log(prices_df['Price'])
-prices_df['LogReturn'] = prices_df['LogPrice'].diff()
-prices_df = prices_df.dropna().reset_index(drop=True)
+@app.route("/api/log-return", methods=["GET"])
+def log_return():
+    data = get_log_return_data()  # This is already a list of dicts
+    return jsonify(data)  # Don't call .to_dict()
 
-returns = prices_df['LogReturn'].values
-n = len(returns)
 
-# Global placeholders
-trace = None
-change_idx = None
-change_date = None
+@app.route("/api/summary", methods=["GET"])
+def summary_api():
+    try:
+        indicators = get_summary_indicators()
+        return jsonify({"status": "success", "data": indicators})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
-def run_model():
-    global trace, change_idx, change_date
 
-    with pm.Model() as model:
-        tau = pm.DiscreteUniform('tau', lower=0, upper=n)
-        mu1 = pm.Normal('mu1', mu=0, sigma=1)
-        mu2 = pm.Normal('mu2', mu=0, sigma=1)
-        sigma = pm.HalfNormal('sigma', sigma=1)
+# Load and preprocess your dataset (e.g., BrentOilPrices.csv)
+df = pd.read_csv('../Data/BrentOilPrices.csv', parse_dates=['Date'])
+df.sort_values('Date', inplace=True)
+df['LogReturn'] = (df['Price'].pct_change() + 1).apply(lambda x: np.log(x))
 
-        mu = pm.math.switch(tau >= np.arange(n), mu1, mu2)
-        obs = pm.Normal('obs', mu=mu, sigma=sigma, observed=returns)
+@app.route('/api/log-return-price', methods=['GET'])
+def log_return_price():
+    start = request.args.get('start')
+    end = request.args.get('end')
 
-        trace = pm.sample(2000, tune=1000, target_accept=0.95, return_inferencedata=False, cores=1)
+    filtered = df.copy()
+    if start and end:
+        filtered = filtered[(filtered['Date'] >= start) & (filtered['Date'] <= end)]
 
-    change_idx = int(np.median(trace['tau']))
-    change_date = prices_df.iloc[change_idx]['Date']
+    data = filtered[['Date', 'LogReturn']].dropna().to_dict(orient='records')
+    for d in data:
+        d['Date'] = d['Date'].strftime('%Y-%m-%d')
 
-# Flask endpoint
-@app.route('/api/changepoints')
-def get_changepoints():
-    global trace, change_idx, change_date
+    return jsonify({'status': 'success', 'data': data})
 
-    if trace is None:
-        return jsonify({"error": "Model not yet computed"}), 400
 
-    result = {
-        "change_point_index": change_idx,
-        "change_point_date": str(change_date),
-        "mu1": float(np.mean(trace['mu1'])),
-        "mu2": float(np.mean(trace['mu2']))
-    }
-    return jsonify(result)
+@app.route('/api/indicators-price', methods=['GET'])
+def indicators_price():
+    start = request.args.get('start')
+    end = request.args.get('end')
+    filtered = df.copy()
+    if start and end:
+        filtered = filtered[(filtered['Date'] >= start) & (filtered['Date'] <= end)]
+
+    volatility = filtered['LogReturn'].std()
+    avg_change = filtered['Price'].pct_change().mean()
+
+    return jsonify({
+        'status': 'success',
+        'data': {
+            'volatility': round(volatility, 6),
+            'average_change': round(avg_change, 6)
+        }
+    })
 
 
 if __name__ == "__main__":
-    run_model()
     app.run(debug=True, port=5000)
