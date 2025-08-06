@@ -37,7 +37,7 @@ def build_model(returns, target_accept=0.95, draws=500, tune=500, cores=1):
 
             obs = pm.Normal("obs", mu=mu, sigma=sigma, observed=returns)
 
-            trace = pm.sample(draws=draws, tune=tune, return_inferencedata=True, target_accept=target_accept)
+            trace = pm.fit(draws=draws, tune=tune, return_inferencedata=True, target_accept=target_accept)
         return model, trace
     except Exception as e:
         print(f"Error building or sampling model: {e}")
