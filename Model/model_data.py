@@ -42,28 +42,36 @@ def load_event(csv_path):
 #     except Exception as e:
 #         print(f"Error building or sampling model: {e}")
 #         return None, None
-def build_model_advi(returns, n=20000):
+def build_model_advi(returns):
     try:
         with pm.Model() as model:
+            # Prior distributions
             tau = pm.DiscreteUniform("tau", lower=0, upper=len(returns) - 1)
             mu1 = pm.Normal("mu1", mu=0, sigma=1)
             mu2 = pm.Normal("mu2", mu=0, sigma=1)
             sigma1 = pm.HalfNormal("sigma1", sigma=1)
             sigma2 = pm.HalfNormal("sigma2", sigma=1)
 
+            # Piecewise function for regime switching
             idx = np.arange(len(returns))
             mu = pm.math.switch(tau >= idx, mu1, mu2)
             sigma = pm.math.switch(tau >= idx, sigma1, sigma2)
 
+            # Likelihood
             obs = pm.Normal("obs", mu=mu, sigma=sigma, observed=returns)
 
-            approx = pm.fit(n=n, method='advi')  # ← Using ADVI
-            trace = approx.sample(1000)          # ← Draw samples from the approximation
-            trace = az.from_pymc3(trace=trace)   # ← Convert to ArviZ InferenceData if needed
-        return model, trace
+            # Fit using ADVI
+            approx = pm.fit(n=10000, method='advi')  # You can also try 'fullrank_advi'
+
+            # Sample from the variational posterior
+            trace = approx.sample(draws=2000)
+            idata = az.from_pymc3(trace=trace, model=model) if hasattr(pm, "from_pymc3") else az.from_dict(posterior=trace)
+
+        return model, idata
     except Exception as e:
-        print(f"Error building or fitting model with ADVI: {e}")
+        print(f"Error in ADVI model building: {e}")
         return None, None
+
 
 def extract_change_point(trace, dates):
     try:
