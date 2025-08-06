@@ -1,10 +1,10 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import pandas as pd
+from datetime import timedelta
 import numpy as np
 import matplotlib.pyplot as plt
 from data_analysis import get_log_return_data, get_summary_indicators
-from mc import *
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -90,6 +90,34 @@ def indicators_price():
         }
     })
 
+
+@app.route('/api/price_changes_around_events_filtered')
+def get_price_changes_filtered():
+    start = request.args.get('start')
+    end = request.args.get('end')
+
+    filtered_events = events_df
+    if start:
+        filtered_events = filtered_events[filtered_events['Date'] >= start]
+    if end:
+        filtered_events = filtered_events[filtered_events['Date'] <= end]
+
+    results = []
+    for _, event in filtered_events.iterrows():
+        try:
+            event_date = event['Date']
+            matching_price = prices_df[prices_df['Date'] == event_date]
+            if not matching_price.empty:
+                price = float(matching_price['Price'].values[0])
+                results.append({
+                    "event": event['Description'],
+                    "date": event_date,
+                    "price_on_day": price,
+                    "price_change": round(price - 65.00, 2)
+                })
+        except Exception as e:
+            print(f"Error processing event: {e}")
+    return jsonify(results)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

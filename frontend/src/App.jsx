@@ -137,7 +137,7 @@ import Events from "./components/Events";
 import Indicators from "./components/Indicators";
 import SummaryIndicators from "./components/SummaryIndicators";
 import Dashboard  from "./components/Dashboard";
-import LogReturnsChart from "./components/LogReturnsChart";
+import OilpriceeventCorrelations from "./components/OilpriceeventCorrelations";
 import OilPrices from "./components/OilPrices";
 
 const App = () => {
@@ -149,7 +149,8 @@ const App = () => {
       case "events": return <Events />;
       case "indicators": return <Indicators />;
       case "summaryindicators": return <SummaryIndicators />;
-      case "Dashboard": return<Dashboard />
+      case "dashboard": return<Dashboard />;
+      case "OilpriceeventCorrelations": return<OilpriceeventCorrelations />;
       case "oilprices": return <OilPrices />;
       default: return <Overview />;
     }

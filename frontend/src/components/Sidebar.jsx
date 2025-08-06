@@ -31,8 +31,9 @@ const Sidebar = ({ setActivePage }) => (
       <li><button onClick={() => setActivePage("overview")}>Overview</button></li>
       <li><button onClick={() => setActivePage("events")}>Key Events</button></li>
       <li><button onClick={() => setActivePage("indicators")}>Indicators</button></li>
-      <li><button onClick={() => setActivePage("summaryindicators")}>SummaryIndicators</button></li>
-      <li><button onClick={() => setActivePage("Dashboard")}>Dashboard</button></li>
+      <li><button onClick={() => setActivePage("summaryindicators")}>Summary Indicators</button></li>
+      <li><button onClick={() => setActivePage("dashboard")}>Dashboard</button></li>
+      <li><button onClick={() => setActivePage("oilpriceeventcorrelations")}>OilpriceeventCorrelations</button></li>
       <li><button onClick={() => setActivePage("oilprices")}>Oil Prices</button></li>
     </ul>
   </nav>
