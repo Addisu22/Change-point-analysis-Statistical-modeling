@@ -23,7 +23,26 @@ def load_event(csv_path):
     except Exception as e:
         print(f"Error loading or preprocessing data: {e}")
         return None
-def build_model(returns, target_accept=0.95, draws=500, tune=500, cores=1):
+# def build_model(returns, target_accept=0.95, draws=500, tune=500, cores=1):
+#     try:
+#         with pm.Model() as model:
+#             tau = pm.DiscreteUniform("tau", lower=0, upper=len(returns) - 1)
+#             mu1 = pm.Normal("mu1", mu=0, sigma=1)
+#             mu2 = pm.Normal("mu2", mu=0, sigma=1)
+#             sigma1 = pm.HalfNormal("sigma1", sigma=1)
+#             sigma2 = pm.HalfNormal("sigma2", sigma=1)
+
+#             mu = pm.math.switch(tau >= np.arange(len(returns)), mu1, mu2)
+#             sigma = pm.math.switch(tau >= np.arange(len(returns)), sigma1, sigma2)
+
+#             obs = pm.Normal("obs", mu=mu, sigma=sigma, observed=returns)
+
+#             trace = pm.fit(draws=draws, tune=tune, return_inferencedata=True, target_accept=target_accept)
+#         return model, trace
+#     except Exception as e:
+#         print(f"Error building or sampling model: {e}")
+#         return None, None
+def build_model_advi(returns, n=20000):
     try:
         with pm.Model() as model:
             tau = pm.DiscreteUniform("tau", lower=0, upper=len(returns) - 1)
@@ -32,15 +51,18 @@ def build_model(returns, target_accept=0.95, draws=500, tune=500, cores=1):
             sigma1 = pm.HalfNormal("sigma1", sigma=1)
             sigma2 = pm.HalfNormal("sigma2", sigma=1)
 
-            mu = pm.math.switch(tau >= np.arange(len(returns)), mu1, mu2)
-            sigma = pm.math.switch(tau >= np.arange(len(returns)), sigma1, sigma2)
+            idx = np.arange(len(returns))
+            mu = pm.math.switch(tau >= idx, mu1, mu2)
+            sigma = pm.math.switch(tau >= idx, sigma1, sigma2)
 
             obs = pm.Normal("obs", mu=mu, sigma=sigma, observed=returns)
 
-            trace = pm.fit(draws=draws, tune=tune, return_inferencedata=True, target_accept=target_accept)
+            approx = pm.fit(n=n, method='advi')  # ← Using ADVI
+            trace = approx.sample(1000)          # ← Draw samples from the approximation
+            trace = az.from_pymc3(trace=trace)   # ← Convert to ArviZ InferenceData if needed
         return model, trace
     except Exception as e:
-        print(f"Error building or sampling model: {e}")
+        print(f"Error building or fitting model with ADVI: {e}")
         return None, None
 
 def extract_change_point(trace, dates):
