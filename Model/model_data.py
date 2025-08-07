@@ -37,8 +37,12 @@ def build_model(returns, target_accept=0.95, draws=500, tune=500, cores=1):
             sigma = pm.math.switch(tau >= np.arange(len(returns)), sigma1, sigma2)
 
             obs = pm.Normal("obs", mu=mu, sigma=sigma, observed=returns)
+
             start = time.time()
-            trace = pm.fit(draws=draws, tune=tune, return_inferencedata=True, target_accept=target_accept)
+            trace = pm.sample(draws=draws, tune=tune, 
+                              return_inferencedata=True, 
+                              target_accept=target_accept, 
+                              cores=cores)
             print("Time taken:", time.time() - start)
         return model, trace
     except Exception as e:
