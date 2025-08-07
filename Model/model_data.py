@@ -4,6 +4,12 @@ import pymc as pm
 import arviz as az
 import matplotlib.pyplot as plt
 
+import time
+start = time.time()
+trace = pm.sample(draws=500, tune=500, return_inferencedata=True)
+print("Time taken:", time.time() - start)
+
+
 def load_and_preprocess(csv_path):
     try:
         df = pd.read_csv(csv_path, parse_dates=['Date'])
