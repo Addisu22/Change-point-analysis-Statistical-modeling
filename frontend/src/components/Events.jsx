@@ -40,31 +40,3 @@ const Events = () => {
 };
 
 export default Events;
-
-// import React, { useEffect, useState } from 'react';
-// import axios from 'axios';
-
-// const Events = () => {
-//   const [events, setEvents] = useState([]);
-
-//   useEffect(() => {
-//     axios.get('http://localhost:5000/api/events')
-//       .then(res => setEvents(res.data))
-//       .catch(err => console.error(err));
-//   }, []);
-
-//   return (
-//     <div>
-//       <h2>Key Political & Economic Events</h2>
-//       <ul>
-//         {events.map((event, index) => (
-//           <li key={index}>
-//             <strong>{event.Date}:</strong> {event.Event}
-//           </li>
-//         ))}
-//       </ul>
-//     </div>
-//   );
-// };
-
-// export default Events;
