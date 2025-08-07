@@ -3,12 +3,7 @@ import numpy as np
 import pymc as pm
 import arviz as az
 import matplotlib.pyplot as plt
-
 import time
-start = time.time()
-trace = pm.sample(draws=500, tune=500, return_inferencedata=True)
-print("Time taken:", time.time() - start)
-
 
 def load_and_preprocess(csv_path):
     try:
@@ -42,8 +37,9 @@ def build_model(returns, target_accept=0.95, draws=500, tune=500, cores=1):
             sigma = pm.math.switch(tau >= np.arange(len(returns)), sigma1, sigma2)
 
             obs = pm.Normal("obs", mu=mu, sigma=sigma, observed=returns)
-
+            start = time.time()
             trace = pm.fit(draws=draws, tune=tune, return_inferencedata=True, target_accept=target_accept)
+            print("Time taken:", time.time() - start)
         return model, trace
     except Exception as e:
         print(f"Error building or sampling model: {e}")
